@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AD5B9EB42BF661CF00E7D5CD /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5B9EB32BF661CF00E7D5CD /* main.swift */; };
+		AD5B9EBB2BF661E000E7D5CD /* Relay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5B9EBA2BF661E000E7D5CD /* Relay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,7 @@
 /* Begin PBXFileReference section */
 		AD5B9EB02BF661CF00E7D5CD /* echoserver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = echoserver; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD5B9EB32BF661CF00E7D5CD /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		AD5B9EBA2BF661E000E7D5CD /* Relay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Relay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +59,7 @@
 		AD5B9EB22BF661CF00E7D5CD /* echoserver */ = {
 			isa = PBXGroup;
 			children = (
+				AD5B9EBA2BF661E000E7D5CD /* Relay.swift */,
 				AD5B9EB32BF661CF00E7D5CD /* main.swift */,
 			);
 			path = echoserver;
@@ -121,6 +124,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AD5B9EB42BF661CF00E7D5CD /* main.swift in Sources */,
+				AD5B9EBB2BF661E000E7D5CD /* Relay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
