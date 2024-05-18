@@ -29,21 +29,31 @@ class Relay {
                     break
                 }
             }
-
             func receive() {
                 newConnection.receiveMessage { content, context, complete, error in
-                    if content != nil {
+                    if let content = content {
                         let metaData = NWProtocolWebSocket.Metadata(opcode: .text)
                         let context = NWConnection.ContentContext(identifier: "text", metadata: [metaData])
-
-                        newConnection
-                            .send(content: content,
-                                  contentContext: context,
-                                  completion: .contentProcessed { error in
-                                if error == nil {
-                                    receive()
-                                }
-                            })
+                        if String(data: content, encoding: .utf8) == "EVENT_REQUEST" {
+                            let eventData = self.basicEvent.data(using: .utf8)!
+                            newConnection
+                                .send(content: eventData,
+                                      contentContext: context,
+                                      completion: .contentProcessed { error in
+                                    if error == nil {
+                                        receive()
+                                    }
+                                })
+                        } else {
+                            newConnection
+                                .send(content: content,
+                                      contentContext: context,
+                                      completion: .contentProcessed { error in
+                                    if error == nil {
+                                        receive()
+                                    }
+                                })
+                        }
                     }
                     if !complete {
                         receive()
@@ -56,4 +66,7 @@ class Relay {
     func start() {
         listener.start(queue: queue)
     }
+
+    let basicEvent: String = "[\"EVENT\",\"sub1\",{\"id\":\"id1\",\"pubkey\":\"pubkey1\",\"created_at\":-62135769600.0,\"kind\":1,\"tags\":[[\"e\",\"event1\",\"event2\"],[\"p\",\"pub1\",\"pub2\"]],\"content\":\"content1\",\"sig\":\"sig1\"}]"
+
 }
