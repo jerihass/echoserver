@@ -29,38 +29,42 @@ class Relay {
                     break
                 }
             }
+
+            func sendData(_ data: Data, _ context: NWConnection.ContentContext) {
+                self.send(data, to: newConnection, in: context)
+            }
+            
             func receive() {
-                newConnection.receiveMessage { content, context, complete, error in
-                    if let content = content {
-                        let metaData = NWProtocolWebSocket.Metadata(opcode: .text)
-                        let context = NWConnection.ContentContext(identifier: "text", metadata: [metaData])
-                        if String(data: content, encoding: .utf8) == "EVENT_REQUEST" {
-                            let eventData = self.basicEvent.data(using: .utf8)!
-                            newConnection
-                                .send(content: eventData,
-                                      contentContext: context,
-                                      completion: .contentProcessed { error in
-                                    if error == nil {
-                                        receive()
-                                    }
-                                })
-                        } else {
-                            newConnection
-                                .send(content: content,
-                                      contentContext: context,
-                                      completion: .contentProcessed { error in
-                                    if error == nil {
-                                        receive()
-                                    }
-                                })
-                        }
-                    }
-                    if !complete {
-                        receive()
-                    }
-                }
+                self.receive(with: newConnection)
             }
         }
+    }
+
+    func receive(with connection: NWConnection) {
+        connection.receiveMessage {[weak self] content, context, complete, error in
+            guard let self = self else { return }
+            if let content = content {
+                let metaData = NWProtocolWebSocket.Metadata(opcode: .text)
+                let context = NWConnection.ContentContext(identifier: "text", metadata: [metaData])
+                if String(data: content, encoding: .utf8) == "EVENT_REQUEST" {
+                    let eventData = self.basicEvent.data(using: .utf8)!
+                    send(eventData, to: connection, in: context)
+                } else {
+                    send(content, to: connection, in: context)
+                }
+            }
+            if !complete {
+                receive(with: connection)
+            }
+        }
+    }
+
+    func send(_ data: Data, to connection: NWConnection, in context: NWConnection.ContentContext) {
+        connection.send(content: data, contentContext: context, completion: .contentProcessed { error in
+            if error == nil {
+                self.receive(with: connection)
+            }
+        })
     }
 
     func start() {
