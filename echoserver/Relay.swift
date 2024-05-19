@@ -46,12 +46,7 @@ class Relay {
             if let content = content {
                 let metaData = NWProtocolWebSocket.Metadata(opcode: .text)
                 let context = NWConnection.ContentContext(identifier: "text", metadata: [metaData])
-                if String(data: content, encoding: .utf8) == "EVENT_REQUEST" {
-                    let eventData = self.basicEvent.data(using: .utf8)!
-                    send(eventData, to: connection, in: context)
-                } else {
-                    send(content, to: connection, in: context)
-                }
+                send(content, to: connection, in: context)
             }
             if !complete {
                 receive(with: connection)
@@ -70,7 +65,4 @@ class Relay {
     func start() {
         listener.start(queue: queue)
     }
-
-    let basicEvent: String = "[\"EVENT\",\"sub1\",{\"id\":\"id1\",\"pubkey\":\"pubkey1\",\"created_at\":-62135769600.0,\"kind\":1,\"tags\":[[\"e\",\"event1\",\"event2\"],[\"p\",\"pub1\",\"pub2\"]],\"content\":\"content1\",\"sig\":\"sig1\"}]"
-
 }
