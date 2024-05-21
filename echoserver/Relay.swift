@@ -46,12 +46,21 @@ class Relay {
             if let content = content {
                 let metaData = NWProtocolWebSocket.Metadata(opcode: .text)
                 let context = NWConnection.ContentContext(identifier: "text", metadata: [metaData])
-                send(content, to: connection, in: context)
+                switch String(data: content, encoding: .utf8) {
+                case "EVENT_REQUEST":
+                    send(nostrEvent(), to: connection, in: context)
+                default:
+                    send(content, to: connection, in: context)
+                }
             }
             if !complete {
                 receive(with: connection)
             }
         }
+    }
+
+    func nostrEvent() -> Data {
+         makeEventData(id: "eventID", pubkey: "pubkey", created_at: .now, kind: 1, tags: [], content: "The content", sig: "signature")
     }
 
     func send(_ data: Data, to connection: NWConnection, in context: NWConnection.ContentContext) {
@@ -64,5 +73,23 @@ class Relay {
 
     func start() {
         listener.start(queue: queue)
+    }
+}
+
+private func makeEventData(id: String, pubkey: String, created_at: Date, kind: UInt16, tags: [[String]], content: String, sig: String) -> Data {
+    let time = Int(created_at.timeIntervalSince1970)
+    let tagString = tags.stringed
+
+    let eventJSON = "[\"EVENT\",\"sub1\",{\"id\":\"\(id)\",\"pubkey\":\"\(pubkey)\",\"created_at\":\(time),\"kind\":\(kind),\"tags\":\(tagString),\"content\":\"\(content)\",\"sig\":\"\(sig)\"}]"
+
+    return Data(eventJSON.utf8)
+}
+
+private extension Array where Element == [String] {
+    var stringed: String {
+        if let json = try? JSONEncoder().encode(self), let string = String(data: json, encoding: .utf8) {
+            return string
+        }
+        return ""
     }
 }
