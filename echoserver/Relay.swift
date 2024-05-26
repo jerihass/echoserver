@@ -55,7 +55,7 @@ class Relay {
                     send(content, to: connection, in: context)
                 }
             }
-            if !complete {
+            if !complete && error == nil {
                 receive(with: connection)
             }
         }
