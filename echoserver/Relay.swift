@@ -9,17 +9,17 @@ class Relay {
     let listener: NWListener
     let queue = DispatchQueue(label: "swifr.relay")
     init() throws {
-        let parameters = NWParameters(tls: nil, tcp: .init())
-        let websocketOptions = NWProtocolWebSocket.Options()
+        let parameters = SecureWebSocket.parameters()
+        let websocketOptions = NWProtocolWebSocket.Options(.version13)
+
         parameters.defaultProtocolStack.applicationProtocols.insert(websocketOptions, at: 0)
 
-        let port = NWEndpoint.Port(integerLiteral: 8080)
+        let port = NWEndpoint.Port(integerLiteral: 4433)
         listener = try NWListener(using: parameters, on: port)
 
         listener.stateUpdateHandler = { _ in }
 
         listener.newConnectionHandler = { newConnection in
-            newConnection.start(queue: .main)
 
             newConnection.stateUpdateHandler = { state in
                 switch state {
@@ -37,6 +37,8 @@ class Relay {
             func receive() {
                 self.receive(with: newConnection)
             }
+
+            newConnection.start(queue: .main)
         }
     }
 
@@ -91,5 +93,48 @@ private extension Array where Element == [String] {
             return string
         }
         return ""
+    }
+}
+
+class SecureWebSocket {
+    struct WSCreationError: Error {}
+
+    static func parameters() -> NWParameters {
+        let tlsOptions = NWProtocolTLS.Options()
+        let tcpOptions = NWProtocolTCP.Options()
+        let parameters = NWParameters(tls: tlsOptions, tcp: tcpOptions)
+        let options = NWProtocolWebSocket.Options()
+        parameters.defaultProtocolStack.applicationProtocols.insert(options, at: 0)
+
+        if let secIdentity = getSecIdentity(),
+           let identity = sec_identity_create(secIdentity) {
+            sec_protocol_options_set_min_tls_protocol_version(
+                tlsOptions.securityProtocolOptions, .TLSv13)
+            sec_protocol_options_set_local_identity(
+                tlsOptions.securityProtocolOptions, identity)
+        }
+
+        return parameters
+    }
+
+    static private func getSecIdentity() -> SecIdentity? {
+        var identity: SecIdentity?
+        let getquery = [kSecClass: kSecClassCertificate,
+            kSecAttrLabel: "echoserver",
+            kSecReturnRef: true] as NSDictionary
+
+
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(getquery as CFDictionary, &item)
+        guard status == errSecSuccess else {
+            return nil
+        }
+        let certificate = item as! SecCertificate
+
+        let identityStatus = SecIdentityCreateWithCertificate(nil, certificate, &identity)
+        guard identityStatus == errSecSuccess else {
+            return nil
+        }
+        return identity
     }
 }
