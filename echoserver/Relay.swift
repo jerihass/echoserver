@@ -9,12 +9,8 @@ class Relay {
     let listener: NWListener
     let queue = DispatchQueue(label: "swifr.relay")
     init() throws {
-        let parameters = SecureWebSocket.parameters()
-        let websocketOptions = NWProtocolWebSocket.Options(.version13)
-
-        parameters.defaultProtocolStack.applicationProtocols.insert(websocketOptions, at: 0)
-
-        let port = NWEndpoint.Port(integerLiteral: 4433)
+        let parameters = SecureWebSocket.insecure()
+        let port = NWEndpoint.Port(integerLiteral: 8080)
         listener = try NWListener(using: parameters, on: port)
 
         listener.stateUpdateHandler = { _ in }
@@ -50,6 +46,9 @@ class Relay {
                 let context = NWConnection.ContentContext(identifier: "text", metadata: [metaData])
                 switch String(data: content, encoding: .utf8) {
                 case "EVENT_REQUEST":
+                    send(nostrEvent(), to: connection, in: context)
+                case "EVENT_REQUEST_TWO":
+                    send(nostrEvent(), to: connection, in: context)
                     send(nostrEvent(), to: connection, in: context)
                 default:
                     send(content, to: connection, in: context)
@@ -99,12 +98,20 @@ private extension Array where Element == [String] {
 class SecureWebSocket {
     struct WSCreationError: Error {}
 
+    static func insecure() -> NWParameters {
+        let tcpOptions = NWProtocolTCP.Options()
+        let parameters = NWParameters(tls: nil, tcp: tcpOptions)
+        let websocketOptions = NWProtocolWebSocket.Options(.version13)
+        parameters.defaultProtocolStack.applicationProtocols.insert(websocketOptions, at: 0)
+        return parameters
+    }
+
     static func parameters() -> NWParameters {
         let tlsOptions = NWProtocolTLS.Options()
         let tcpOptions = NWProtocolTCP.Options()
         let parameters = NWParameters(tls: tlsOptions, tcp: tcpOptions)
-        let options = NWProtocolWebSocket.Options()
-        parameters.defaultProtocolStack.applicationProtocols.insert(options, at: 0)
+        let websocketOptions = NWProtocolWebSocket.Options(.version13)
+        parameters.defaultProtocolStack.applicationProtocols.insert(websocketOptions, at: 0)
 
         if let secIdentity = getSecIdentity(),
            let identity = sec_identity_create(secIdentity) {
