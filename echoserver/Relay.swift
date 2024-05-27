@@ -44,12 +44,18 @@ class Relay {
             if let content = content {
                 let metaData = NWProtocolWebSocket.Metadata(opcode: .text)
                 let context = NWConnection.ContentContext(identifier: "text", metadata: [metaData])
-                switch String(data: content, encoding: .utf8) {
+                let string = String(data: content, encoding: .utf8)
+                switch string {
+                case "UNTERMINATED_REQUEST":
+                    send(nostrEvent(), to: connection, in: context)
+                    send(Data(), to: connection, in: context)
                 case "EVENT_REQUEST":
                     send(nostrEvent(), to: connection, in: context)
+                    send(eoseData(), to: connection, in: context)
                 case "EVENT_REQUEST_TWO":
                     send(nostrEvent(), to: connection, in: context)
                     send(nostrEvent(), to: connection, in: context)
+                    send(eoseData(), to: connection, in: context)
                 default:
                     send(content, to: connection, in: context)
                 }
@@ -75,6 +81,10 @@ class Relay {
     func start() {
         listener.start(queue: queue)
     }
+}
+
+private func eoseData() -> Data {
+    Data("[\"EOSE\",\"sub1\"]".utf8)
 }
 
 private func makeEventData(id: String, pubkey: String, created_at: Date, kind: UInt16, tags: [[String]], content: String, sig: String) -> Data {
