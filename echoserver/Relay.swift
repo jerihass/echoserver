@@ -56,6 +56,25 @@ class Relay {
                     send(nostrEvent(), to: connection, in: context)
                     send(nostrEvent(), to: connection, in: context)
                     send(eoseData(), to: connection, in: context)
+                case "RANDOM_REQUEST":
+                    send(Relay.uniqueEvent(), to: connection, in: context)
+                    send(Relay.uniqueEvent(), to: connection, in: context)
+                    send(eoseData(), to: connection, in: context)
+                case "3EVENT_EOSE_2EVENT":
+                    send(Relay.uniqueEvent(), to: connection, in: context)
+                    send(Relay.uniqueEvent(), to: connection, in: context)
+                    send(Relay.uniqueEvent(), to: connection, in: context)
+                    send(eoseData(), to: connection, in: context)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                        guard let self = self else { return }
+                        print("sending async")
+                        self.send(Relay.uniqueEvent(), to: connection, in: context)
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                        guard let self = self else { return }
+                        print("sending async")
+                        self.send(Relay.uniqueEvent(), to: connection, in: context)
+                    }
                 default:
                     send(content, to: connection, in: context)
                 }
@@ -68,6 +87,12 @@ class Relay {
 
     func nostrEvent() -> Data {
          makeEventData(id: "eventID", pubkey: "pubkey", created_at: .now, kind: 1, tags: [], content: "The content", sig: "signature")
+    }
+
+    static var number: Int = 0
+    static func uniqueEvent() -> Data {
+        number += 1
+        return makeEventData(id: UUID().uuidString, pubkey: "pubkey", created_at: .now, kind: 1, tags: [], content: "\(number): The content", sig: "signature")
     }
 
     func send(_ data: Data, to connection: NWConnection, in context: NWConnection.ContentContext) {
